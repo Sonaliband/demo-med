@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+
 import {build} from 'esbuild';
 await build({entryPoints:['services/index.ts'],bundle:true,platform:'node',format:'esm',outfile:'../work/services-under-test.mjs',logLevel:'silent'});
 const memory=new Map();globalThis.localStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};globalThis.sessionStorage={setItem:(k,v)=>memory.set(k,v),removeItem:k=>memory.delete(k)};globalThis.window={dispatchEvent:()=>{}};
