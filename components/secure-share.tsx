@@ -12,7 +12,6 @@ export function SecureShare({token}:{token:string}){
     if(API_BASE) {
       qrApi.resolve(token).then(setState).catch(e=>setError(e.message));
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError('This secure report needs a configured MedIntel backend.');
     }
   },[token]);
