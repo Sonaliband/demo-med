@@ -1,0 +1,8 @@
+import type { ClinicalCase } from '@prisma/client';
+export type Intelligence = { summary:string; entities:string[]; symptoms:string[]; conditions:string[]; investigations:string[]; keywords:string[] };
+const dictionary=['fever','headache','fatigue','myalgia','rash','cough','dyspnea','breathlessness','thrombocytopenia','dengue','covid','oxygen','platelet','diabetes','hypertension','inflammatory markers'];
+const textOf=(c:ClinicalCase)=>[c.title,Array.isArray(c.symptoms)?(c.symptoms as string[]).join(' '):'',c.medicalHistory,c.examinationFindings,c.labResults,c.imagingFindings,c.medications,c.observations].join(' ').toLowerCase();
+export const extractMedicalEntities=(c:ClinicalCase)=>dictionary.filter(t=>textOf(c).includes(t));
+export const generateCaseSummary=(c:ClinicalCase)=>`${c.age?`${c.age}-year-old `:'Patient '}clinical case with reported ${Array.isArray(c.symptoms)?(c.symptoms as string[]).join(', '):'symptoms not specified'}. Clinical research and decision-support software has organized the submitted context for evidence exploration.`;
+export const generateSearchKeywords=(c:ClinicalCase)=>extractMedicalEntities(c);
+export async function analyzeClinicalCase(c:ClinicalCase):Promise<Intelligence>{const entities=extractMedicalEntities(c);return {summary:generateCaseSummary(c),entities,symptoms:entities.filter(x=>['fever','headache','fatigue','myalgia','rash','cough','dyspnea','breathlessness'].includes(x)),conditions:entities.filter(x=>['dengue','covid','diabetes','hypertension'].includes(x)),investigations:entities.filter(x=>['thrombocytopenia','platelet','oxygen','inflammatory markers','ns1'].includes(x)),keywords:generateSearchKeywords(c)};}

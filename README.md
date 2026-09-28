@@ -113,3 +113,21 @@ Semantic forms with labels, focus states, keyboard-operable Radix tabs/selects/d
 ## Agent access
 
 When the browser supports WebMCP, `search_research` exposes the same curated research search service. It validates string input and returns concise metadata without changing local state.
+
+## Real backend
+
+The `backend/` directory contains an Express/TypeScript/PostgreSQL/Prisma backend with JWT authentication, bcrypt password hashing, Zod validation, ownership checks, rate limiting, Helmet, CORS, Multer uploads, centralized errors, Swagger at `/api/docs`, seed data and replaceable AI, research, similarity and trend services.
+
+```sh
+cd backend
+cp .env.example .env
+npm install
+npx prisma generate
+npx prisma migrate dev --name init
+npm run seed
+npm run dev
+```
+
+The demo account is `doctor@medintel.demo` / `DemoPassword123!`. It is for local development only. PostgreSQL can be started with `docker compose up postgres`; the backend listens on port 5000. Set the frontend `VITE_API_URL=http://localhost:5000/api` to use the generated API adapters in `services/api.ts`. The current UI preserves the device-local service fallback when that variable is absent or the backend is unavailable.
+
+The backend never returns password hashes, verifies case ownership on every case query, stores uploads behind authenticated routes, returns the documented `{ success, data }` or `{ success: false, error }` envelope, and labels its AI service as clinical research and decision-support software rather than an autonomous diagnostic system.

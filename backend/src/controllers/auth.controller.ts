@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import { z } from 'zod';
+import { prisma } from '../config/prisma.js';
+import { AppError, ok } from '../utils/errors.js';
+import { signToken } from '../utils/jwt.js';
+import { requireAuth } from '../middleware/auth.js';
+const registerSchema=z.object({name:z.string().min(2),email:z.string().email(),password:z.string().min(8),profession:z.string().min(2),organization:z.string().min(2)});
+const publicUser=(u:any)=>{const {passwordHash:_,...safe}=u;return safe;};
+export const authRouter=Router();
+authRouter.post('/register',async(req,res,next)=>{try{const input=registerSchema.parse(req.body);const exists=await prisma.user.findUnique({where:{email:input.email.toLowerCase()}});if(exists)throw new AppError('EMAIL_IN_USE','An account with this email already exists',409);const user=await prisma.user.create({data:{...input,email:input.email.toLowerCase(),passwordHash:await bcrypt.hash(input.password,12)}});res.status(201).json(ok({user:publicUser(user),token:signToken({id:user.id,role:user.role})}));}catch(e){next(e)}});
+authRouter.post('/login',async(req,res,next)=>{try{const input=z.object({email:z.string().email(),password:z.string().min(1)}).parse(req.body);const user=await prisma.user.findUnique({where:{email:input.email.toLowerCase()}});if(!user||!(await bcrypt.compare(input.password,user.passwordHash)))throw new AppError('INVALID_CREDENTIALS','Email or password is incorrect',401);res.json(ok({user:publicUser(user),token:signToken({id:user.id,role:user.role})}));}catch(e){next(e)}});
+authRouter.get('/me',requireAuth,async(req,res,next)=>{try{const user=await prisma.user.findUnique({where:{id:req.user!.id}});if(!user)throw new AppError('USER_NOT_FOUND','User not found',404);res.json(ok({user:publicUser(user)}));}catch(e){next(e)}});
