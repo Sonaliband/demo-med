@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import { z } from 'zod';
+import { requireAuth } from '../middleware/auth.js';
+import { ok } from '../utils/errors.js';
+import { createQr, deleteQr, getQr, listQr, resolveQr, revokeQr } from '../services/qr.service.js';
+const input = z.object({ resourceType: z.enum(['CLINICAL_CASE','CASE_ANALYSIS','SIMILAR_CASES','RESEARCH_COLLECTION','DISEASE_TREND','EVIDENCE_REPORT']), resourceId: z.string().min(1), accessType: z.enum(['PRIVATE','ORGANIZATION','PUBLIC']).default('PRIVATE'), expiresIn: z.enum(['1_HOUR','24_HOURS','7_DAYS','30_DAYS','NEVER']).default('24_HOURS') });
+export const qrRouter = Router();
+qrRouter.post('/generate', requireAuth, async (req,res,next) => { try { const value=input.parse(req.body); res.status(201).json(ok(await createQr({...value,userId:req.user!.id,origin:`${req.protocol}://${req.get('host')}`}))); } catch(e){ next(e); } });
+qrRouter.get('/', requireAuth, async (req,res,next) => { try { res.json(ok(await listQr(req.user!.id))); } catch(e){ next(e); } });
+qrRouter.get('/resolve/:token', async (req,res,next) => { try { res.json(ok(await resolveQr(String(req.params.token), req.user))); } catch(e){ next(e); } });
+qrRouter.get('/:id', requireAuth, async (req,res,next) => { try { res.json(ok(await getQr(String(req.params.id), req.user!.id))); } catch(e){ next(e); } });
+qrRouter.post('/:id/revoke', requireAuth, async (req,res,next) => { try { res.json(ok(await revokeQr(String(req.params.id), req.user!.id))); } catch(e){ next(e); } });
+qrRouter.delete('/:id', requireAuth, async (req,res,next) => { try { res.json(ok(await deleteQr(String(req.params.id), req.user!.id))); } catch(e){ next(e); } });
